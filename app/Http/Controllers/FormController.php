@@ -4,22 +4,30 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Form;
+use App\Models\Question;
 
 class FormController extends Controller
 {
-    // Endpoint para criar um novo formulário
+    // Endpoint para criar um novo formulário com questões
     public function create(Request $request)
     {
         $data = $request->validate([
             'title' => 'required|string',
             'info_style' => 'nullable|string',
             'url' => 'nullable|string',
-            // Adicione validações adicionais conforme necessário
+            'questions' => 'required|array', // Garante que pelo menos uma pergunta seja fornecida
         ]);
-
-        $form = auth()->user()->forms()->create($data);
-
+    
+        // Crie o formulário sem associá-lo ao usuário autenticado
+        $form = Form::create($data);
+    
         return response()->json($form, 201);
+    }
+
+    // Método para criar uma questão a partir dos dados fornecidos
+    protected function createQuestion($questionData)
+    {
+        return Question::create($questionData);
     }
 
     // Endpoint para mostrar os detalhes de um formulário específico
@@ -33,10 +41,13 @@ class FormController extends Controller
     }
 
     // Endpoint para listar todos os formulários do usuário atual
-    public function list()
+    public function list(Request $request)
     {
-        $forms = auth()->user()->forms;
-
+        // Se o usuário estiver autenticado, retorne seus formulários com suas questões
+        $forms = $request->user()->forms()->with('questions')->get();
+        
         return response()->json($forms);
     }
+    
+    
 }

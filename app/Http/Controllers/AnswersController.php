@@ -19,14 +19,12 @@ class AnswerController extends Controller
             'value' => 'nullable|string',
             'is_first' => 'nullable|boolean',
             'public_user_id' => 'nullable|string',
-            // Adicione validações adicionais conforme necessário
         ]);
-
-        $answer = Answer::create($data);
 
         // Verifique se o formulário aceita mais respostas antes de criar a resposta
         $form = Form::findOrFail($data['form_id']);
-        // Implemente a lógica para verificar o consumo do formulário e se ele ainda pode aceitar respostas
+        // Implemente a lógica para verificar o consumo do formulário e se ele ainda pode aceitar respostas e cria a resposta 
+        $answer = Answer::create($data);
 
         return response()->json($answer, 201);
     }

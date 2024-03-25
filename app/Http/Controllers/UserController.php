@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 
 class UserController extends Controller
@@ -24,6 +25,19 @@ class UserController extends Controller
         ]);
 
         return response()->json($user, 201);
+    }
+
+    // Endpoint para fazer login do usuário
+    public function login(Request $request)
+    {
+        $credentials = $request->only('email', 'password');
+
+        if (Auth::attempt($credentials)) {
+            $user = Auth::user();
+            return response()->json($user, 200);
+        }
+
+        return response()->json(['message' => 'Unauthorized'], 401);
     }
 
     // Endpoint para mostrar os detalhes do usuário atual, incluindo o consumo de respostas
