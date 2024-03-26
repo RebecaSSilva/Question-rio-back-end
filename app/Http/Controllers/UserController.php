@@ -14,13 +14,14 @@ class UserController extends Controller
         $data = $request->validate([
             'name' => 'required|string',
             'email' => 'required|email|unique:users,email',
+            'responses_this_month ' => 'nullable|responses_this_month',
             'password' => 'required|string|min:6',
-            // Adicione validações adicionais conforme necessário
         ]);
 
         $user = User::create([
             'name' => $data['name'],
             'email' => $data['email'],
+            'responses_this_month' => $data['responses_this_month'],
             'password' => bcrypt($data['password']),
         ]);
 
@@ -33,21 +34,16 @@ class UserController extends Controller
         $credentials = $request->only('email', 'password');
 
         if (Auth::attempt($credentials)) {
-            $user = Auth::user();
-            return response()->json($user, 200);
+            return response()->json('Usuário autenticado com sucesso' , 200, [], JSON_UNESCAPED_UNICODE);
         }
 
-        return response()->json(['message' => 'Unauthorized'], 401);
+        return response()->json(['message' => 'Não autorizado'], 401, [], JSON_UNESCAPED_UNICODE);
     }
 
     // Endpoint para mostrar os detalhes do usuário atual, incluindo o consumo de respostas
     public function show($id)
     {
         $user = User::findOrFail($id);
-        // Verifique se o usuário tem permissão para acessar seus próprios detalhes
-        // Implemente a lógica de permissão conforme necessário
-
-        // Implemente a lógica para calcular e retornar o consumo de respostas do usuário
 
         return response()->json($user);
     }

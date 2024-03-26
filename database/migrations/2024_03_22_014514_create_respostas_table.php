@@ -18,7 +18,7 @@ class CreateRespostasTable extends Migration
             $table->longText('value');
             $table->boolean('is_last')->default(false);
             $table->text('value_key')->nullable();
-            $table->uuid('public_user_id')->unique();
+            $table->uuid('public_user_id');
             $table->timestamps();
             $table->index('public_user_id'); 
         });

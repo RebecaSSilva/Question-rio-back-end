@@ -18,6 +18,7 @@ class FirstCase extends Seeder
                 'url' => 'https://http://127.0.0.1:8000/forms/' . ($formCount + 1),
             ]);
 
+            // Criar 5 perguntas 
             for ($questionCount = 0; $questionCount < 5; $questionCount++) {
                 $field_slug = uniqid('question_' . ($questionCount + 1) . '_');
                 $question = $form->questions()->create([
@@ -33,7 +34,7 @@ class FirstCase extends Seeder
                     $question->update(['is_last' => true]);
                 }
             }
-
+            // Criar respostas
             $answersCount = 0;
             while ($answersCount < 10000) {
                 foreach ($form->questions as $question) {
@@ -45,7 +46,7 @@ class FirstCase extends Seeder
                         'value_key' => '',
                         'public_user_id' => (string) \Illuminate\Support\Str::uuid(),
                     ]);
-
+//  ajustar seeders na parte do public_user_id para pegar o emsmo usuario apra todas as respostas enviadas s
                     $answersCount++;
 
                     if ($answersCount >= 10000) {

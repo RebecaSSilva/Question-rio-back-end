@@ -55,16 +55,11 @@ class SecondCase extends Seeder
                     'value_key' => '',
                     'public_user_id' => (string) \Illuminate\Support\Str::uuid(),
                 ]);
-        
+
                 $responses_created++;
             }
         }
-        // ajustar aqui para marcar como true
-        // Marcar a última resposta como is_last = true
-        if ($responses_created > 0) {
-            $last_answer = Answer::where('form_id', $form->id)->orderByDesc('id')->first();
-            $last_answer->update(['is_last' => true]);
-        }
+
     }
 }
 
