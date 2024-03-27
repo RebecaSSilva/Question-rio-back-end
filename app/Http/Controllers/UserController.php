@@ -41,10 +41,16 @@ class UserController extends Controller
     }
 
     // Endpoint para mostrar os detalhes do usuário atual, incluindo o consumo de respostas
-    public function show($id)
+    public function show(Request $request)
     {
-        $user = User::findOrFail($id);
-
+        // Obter o usuário autenticado
+        $user = $request->user();
+    
+        // Verificar se o usuário está autenticado
+        if (!$user) {
+            return response()->json(['error' => 'Usuário não autenticado.'], 401);
+        }
+    
         return response()->json($user);
     }
 }

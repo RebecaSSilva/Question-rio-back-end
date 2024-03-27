@@ -6,8 +6,8 @@ use Illuminate\Http\Request;
 use App\Models\Form;
 use App\Models\Answer;
 use App\Models\Question;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Auth;
 
 class FormController extends Controller
 {
@@ -16,11 +16,10 @@ class FormController extends Controller
     {
         // Verifica se há um usuário autenticado
         if (auth()->check()) {
-            // Obtém o ID do usuário autenticado
             $user_id = auth()->user()->id;
     
             try {
-                // Valida os dados do formulário e das questões
+                // Validar os dados do formulário e das questões
                 $data = $request->validate([
                     'title' => 'required|string',
                     'url' => 'nullable|string',
@@ -43,19 +42,16 @@ class FormController extends Controller
                     ],
                 ]);
             } catch (ValidationException $e) {
-                // Retornar uma resposta JSON indicando o erro de validação
                 return response()->json(['error' => $e->getMessage()], 422);
             }
     
-            // Adiciona o ID do usuário aos dados do formulário
+            // Adicionar o ID do usuário aos dados do formulário
             $data['user_id'] = $user_id;
     
-            // Tenta criar o formulário
             try {
                 // Cria o formulário com os dados fornecidos
                 $form = Form::create($data);
     
-                // Deixar por padrão configurado o layout caso seja nulo
                 $form->url = url('http://127.0.0.1:8000/forms/' . $form->id);
                 $form->save();
     
@@ -70,12 +66,10 @@ class FormController extends Controller
                     }
                 }
     
-                // Retorna o formulário criado com as perguntas associadas
                 $form->load('questions');
     
                 return response()->json(['form' => $form, 'questoes' => $createdQuestions], 201, [], JSON_UNESCAPED_UNICODE);
             } catch (\Exception $e) {
-                // Se ocorrer um erro ao criar o formulário, retorna uma resposta JSON com o erro
                 return response()->json(['error' => 'Erro ao criar o formulário: ' . $e->getMessage()], 500);
             }
         } else {
@@ -89,7 +83,13 @@ class FormController extends Controller
     {
         // Encontrar e retornar o formulário com o ID fornecido
         $form = Form::findOrFail($id);
+        
         // Carregar as perguntas associadas ao formulário
+        $user = Auth::user();
+        if (!$user || $form->user_id !== $user->id) {
+            return response()->json(['error' => 'Você não tem permissão para visualizar este formulário.'], 403);
+        }
+
         $form->load('questions');
 
         return response()->json($form, 200, [], JSON_UNESCAPED_UNICODE);
@@ -98,6 +98,11 @@ class FormController extends Controller
    // Endpoint para listar todos os formulários do usuário com o total de pessoas que responderam ao menos uma pergunta
     public function list(Request $request)
     {
+
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json(['error' => 'Usuário não autenticado.'], 401);
+        }
         // Se o usuário estiver autenticado, retorne seus formulários com suas questões
         $forms = $request->user()->forms()->with('questions')->get();
 

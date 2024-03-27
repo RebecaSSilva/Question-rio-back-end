@@ -12,6 +12,7 @@ class SecondCase extends Seeder
     {
         // Criar outro usuário com 1 formulário
         $user = User::factory()->create();
+        $publicUserId = (string) \Illuminate\Support\Str::uuid();
         $form = $user->forms()->create([
             'title' => 'Formulário 201',
             'url' => 'https://http://127.0.0.1:8000/forms/201',
@@ -27,12 +28,8 @@ class SecondCase extends Seeder
                 'field_type' => 'text',
                 'mandatory' => false, 
                 'value_key' => '',
+                'is_last' => ($i == 4), // Define is_last como true para a última pergunta
             ]);
-
-            // Definir a última pergunta como verdadeira
-            if ($i == 4) {
-                $question->update(['is_last' => true]);
-            }
         }
 
         // Limitar o número de respostas para 100 mil
@@ -41,6 +38,9 @@ class SecondCase extends Seeder
 
         // Criar as respostas para o formulário
         for ($k = 0; $k < $max_responses; $k++) {
+            // Criar um novo UUID para cada usuário que responde
+            $userPublicUserId = (string) \Illuminate\Support\Str::uuid();
+
             foreach ($form->questions as $question) {
                 // Verificar se já atingiu o limite de respostas
                 if ($responses_created >= $max_responses) {
@@ -53,7 +53,8 @@ class SecondCase extends Seeder
                     'field_type' => $question->field_type,
                     'value' => 'Resposta para ' . $question->field_title,
                     'value_key' => '',
-                    'public_user_id' => (string) \Illuminate\Support\Str::uuid(),
+                    'public_user_id' => $userPublicUserId,
+                    'is_last' => ($question->is_last && $question->field_slug === $question->field_slug), // Define is_last como true para a última resposta correspondente à última pergunta
                 ]);
 
                 $responses_created++;
@@ -62,4 +63,3 @@ class SecondCase extends Seeder
 
     }
 }
-

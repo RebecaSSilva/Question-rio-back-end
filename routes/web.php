@@ -12,7 +12,7 @@ use App\Http\Controllers\AnswerController;
 |
 | Here is where you can register web routes for your application. These
 | routes are loaded by the RouteServiceProvider and all of them will
-| be assigned to the "web" middleware group. Make something great!
+| be assigned to the "web" middleware group. Make something great!  
 |
 */
 
@@ -32,6 +32,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/forms', [FormController::class, 'list']); // Listar todos os formulários do usuário atual
 
     // Rotas relacionadas às respostas
-    Route::post('/answers', [AnswerController::class, 'create']); // Criar uma nova resposta
-    Route::get('/answers/{formId}', [AnswerController::class, 'listByForm']); // Listar todas as respostas de um formulário específico
+    Route::post('/answers/{formId}', [AnswerController::class, 'listByForm']); // Listar todas as respostas de um formulário específico
+
 });
+
+Route::post('/answers', [AnswerController::class, 'create']); // Criar uma nova resposta

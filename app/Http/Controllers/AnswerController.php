@@ -8,10 +8,9 @@ use App\Models\Answer;
 use App\Models\Question;
 use Illuminate\Support\Str;
 use Illuminate\Support\Carbon;
-use GuzzleHttp\Client;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Mail;
-
+use Illuminate\Support\Facades\Auth;
+use App\Jobs\SendNotificationJob;
 class AnswerController extends Controller
 {
     
@@ -73,121 +72,71 @@ class AnswerController extends Controller
             // Incrementar o contador de respostas do usuário
             User::where('id', $userId)->increment('responses_this_month', count($answersData));
 
-            // Verificar se todas as respostas são marcadas como a última resposta
-            $allLast = collect($answersData)->pluck('is_last')->every(function ($value) {
-                return $value === true;
-            });
-            
-            // Se todas as respostas forem marcadas como a última resposta, enviar e-mail e webhook
-            if ($allLast) {
-                $ownerEmail = User::findOrFail($userId)->email;
-                $this->sendEmailAndWebhookNotification($ownerEmail, $answersData);
+            // Se formulário concluido, enviar e-mail e webhook
+            if ($this->hasLastAnswer($publicUserId)) {
+                // Despachar o job com todas as perguntas e respostas
+                SendNotificationJob::dispatch($userId, $publicUserId, $answersData);
             }
-
         } catch (\Exception $e) {
             return response()->json(['error' =>  $e->getMessage()], 500);
         }
 
         return response()->json(['message' => 'Respostas inseridas com sucesso.'], 201);
-    }
-
-    public function sendWebhookNotification(Request $request)
+    } 
+    
+    // Verifica se alguma resposta é a última
+    private function hasLastAnswer($publicUserId)
     {
-        $publicUserId = $request->input('public_user_id');
-    
-        // Verificar se o public_user_id foi fornecido
-        if (!$publicUserId) {
-            return response()->json(['error' => 'public_user_id não fornecido.'], 400);
-        }
-    
-        // Obter todas as respostas associadas ao public_user_id
-        $answers = Answer::where('public_user_id', $publicUserId)->get();
-    
-        // Verificar se há respostas encontradas para o public_user_id
-        if ($answers->isEmpty()) {
-            return response()->json(['error' => 'Nenhuma resposta encontrada para o public_user_id fornecido.'], 404);
-        }
-    
-        // Montar os dados do webhook
-        $webhookData = $answers->toArray();
-
-        // Obter o ID das respostas para construir a URL
-        $answerIds = $answers->pluck('id')->implode(',');
-
-        // Substitua o valor abaixo pela URL real para onde deseja enviar o webhook
-        $webhookUrl = 'http://127.0.0.1:8000/answers/' . $answerIds;
-    
-        // Enviar o webhook para a URL de notificação
-        try {
-            $client = new Client();
-            $response = $client->post($webhookUrl, ['json' => $webhookData]);
-    
-            // Verificar o código de resposta
-            if ($response->getStatusCode() === 200) {
-                return response()->json(['message' => 'Webhook enviado com sucesso.'], 200);
-            } else {
-                return response()->json(['error' => 'Falha ao enviar o webhook.'], $response->getStatusCode());
-            }
-        } catch (\Exception $e) {
-            return response()->json(['error' => 'Erro ao enviar o webhook: ' . $e->getMessage()], 500);
-        }
-    }
-    
-    // Envia a notificação de nova resposta e o webhook
-    private function sendEmailAndWebhookNotification($ownerEmail, $answersData)
-    {
-        $subject = 'Nova resposta submetida ao formulário';
-        $message = 'Uma nova resposta foi submetida ao seu formulário. Verifique o painel para mais detalhes.';
-        
-        try {
-            // Envia o e-mail usando o SMTP do Mailtrap
-            Mail::raw($message, function ($message) use ($ownerEmail, $subject) {
-                $message->to($ownerEmail)->subject($subject);
-            });
-    
-            // Envia o webhook
-            $this->sendWebhookNotification($answersData);
-    
-            return response()->json(['message' => 'E-mail e webhook enviados com sucesso.'], 200);
-        } catch (\Exception $e) {
-            return response()->json(['error' => 'Erro ao enviar o e-mail e webhook: ' . $e->getMessage()], 500);
-        }
+        return Answer::where('public_user_id', $publicUserId)
+            ->where('is_last', true)
+            ->exists();
     }
 
     // Lista as perguntas e respostas
     public function listByForm($formId, Request $request)
     {
-        // Verificar se o formulário existe
+        // Obter o usuário autenticado
+        $user = Auth::user();
+
+        // Verificar se o usuário está autenticado
+        if (!$user) {
+            return response()->json(['error' => 'Usuário não autenticado.'], 401);
+        }
+
+        // Obter o formulário com o ID fornecido
         $form = Form::findOrFail($formId);
-        
-        // Obter o tipo de filtro do parâmetro da solicitação
+
+        // Verificar se o formulário pertence ao usuário autenticado
+        if ($form->user_id !== $user->id) {
+            return response()->json(['error' => 'Você não tem permissão para visualizar estas respostas.'], 403);
+        }
+
+        // Obter o tipo de filtro do corpo da requisição
         $filterType = $request->input('filter_type', 'all'); // Padrão para listar todas as pessoas
-        
+
         // Obter todas as perguntas obrigatórias do formulário
         $mandatoryQuestionSlugs = $form->questions()->where('mandatory', true)->pluck('field_slug');
-    
-        // Obter todas as respostas relacionadas ao formulário
+
+        // Iniciar a consulta para obter respostas relacionadas ao formulário
         $query = Answer::where('form_id', $formId);
-    
+
         // Aplicar filtro com base no tipo especificado
         if ($filterType === 'all') {
             // Não aplicar nenhum filtro
         } elseif ($filterType === 'completed') {
-            // Filtrar para listar apenas os usuários que responderam todas as perguntas e finalizaram 
-            $query->whereHas('questions', function ($query) use ($mandatoryQuestionSlugs) {
-                $query->whereIn('field_slug', $mandatoryQuestionSlugs)
-                    ->where('is_last', true);
-            });
+            // Filtrar para listar apenas as respostas que têm todas as perguntas respondidas
+            $query->where('form_id', $formId)->where('is_last', true);
         } else {
             return response()->json(['error' => 'Tipo de filtro inválido.'], 400);
         }
-        
-        // Obter respostas 
+
+        // Executar a consulta e obter as respostas
         $answers = $query->get();
-        
+
+        // Retornar as perguntas e respostas
         return response()->json(['form' => $form, 'respostas' => $answers], 200, [], JSON_UNESCAPED_UNICODE);
     }
-    
+
     // Verifica se o formulário pode aceitar mais respostas
     private function canAcceptResponse($userId)
     {
