@@ -1,5 +1,11 @@
 Esse projeto é o back-end de um questionário, neste projeto criamos usuários, formulários e questões, também podemos receber respostas sem o usuário estar logado e o dono do formulário irá receber as respostas por e-mail.
 
+Você vai precisar de:
+
+PHP 8+
+Xampp
+MySQL
+
 Como rodar:
 
 git clone https://github.com/RebecaSSilva/Questionario-back-end.git
@@ -24,6 +30,10 @@ MAIL_FROM_NAME="${APP_NAME}"
 php artisan key:generate
 
 php artisan migrate
+(Se você tiver problemas com PDOException aqui ou outro problema tente copiar e colar essea arquivo dentro do seu php.ini)
+[php.ini.zip](https://github.com/RebecaSSilva/Questionario-back-end/files/14772307/php.ini.zip)
+O arquivo esta compactado, descompate e copie dentro do seu arquivo.
+Após salvar o arquivo php.ini com as alterações reinicie o servidor e seu ambiente.
 
 php artisan db:seed
 
@@ -31,6 +41,8 @@ php artisan serve
 
 Para rodar os testes:
 php artisan test
+
+Depois de usar o seeders você pode se autenticar pegando o email da tabela users onde o id for igual ao user_id do formulário criado.
 
 As questões incluem dois filtros, de quem respondeu todas as questões do formulário 
 
@@ -79,5 +91,3 @@ Exemplo json de formulário para criar:
     "email":"jose@hotmail.com",
     "password":"password"
 }
-
-Depois de usar o seeders você pode se autenticar pegando o email da tabela users onde o id for igual ao user_id do formulário criado.
