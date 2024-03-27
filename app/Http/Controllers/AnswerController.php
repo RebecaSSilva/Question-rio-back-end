@@ -83,7 +83,7 @@ class AnswerController extends Controller
 
         return response()->json(['message' => 'Respostas inseridas com sucesso.'], 201);
     } 
-    
+
     // Verifica se alguma resposta é a última
     private function hasLastAnswer($publicUserId)
     {
