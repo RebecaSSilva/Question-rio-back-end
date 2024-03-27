@@ -31,7 +31,8 @@ php artisan key:generate
 
 php artisan migrate
 (Se você tiver problemas com PDOException aqui ou outro problema tente copiar e colar essea arquivo dentro do seu php.ini)
-[php.ini.zip](https://github.com/RebecaSSilva/Questionario-back-end/files/14772307/php.ini.zip)
+[php.zip]
+
 O arquivo esta compactado, descompate e copie dentro do seu arquivo.
 Após salvar o arquivo php.ini com as alterações reinicie o servidor e seu ambiente.
 
