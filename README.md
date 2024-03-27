@@ -29,6 +29,9 @@ php artisan db:seed
 
 php artisan serve
 
+Para rodar os testes:
+php artisan test
+
 As questões incluem dois filtros, de quem respondeu todas as questões do formulário 
 
 {
