@@ -41,7 +41,7 @@ php artisan db:seed
 php artisan serve
 
 Para rodar os testes:
-php artisan test
+php artisan test --testsuite=Feature
 
 Depois de usar o seeders você pode se autenticar pegando o email da tabela users onde o id for igual ao user_id do formulário criado.
 
