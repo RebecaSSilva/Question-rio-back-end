@@ -16,6 +16,10 @@ use App\Http\Controllers\AnswerController;
 |
 */
 
+Route::get('/', function () {
+    return view('welcome');
+});
+
 // Endpoint para registrar um novo usuário
 Route::post('/register', [UserController::class, 'create']);
 
